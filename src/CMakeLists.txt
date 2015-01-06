@@ -787,7 +787,7 @@ set (CMD $<TARGET_FILE:H5detect>)
 add_custom_command (
     OUTPUT ${HDF5_BINARY_DIR}/H5Tinit.c
     COMMAND ${CMD}
-    ARGS > ${HDF5_BINARY_DIR}/H5Tinit.c
+    ARGS ${HDF5_BINARY_DIR}/H5Tinit.c
     DEPENDS H5detect
 )
 
@@ -801,7 +801,7 @@ set (CMD $<TARGET_FILE:H5make_libsettings>)
 add_custom_command (
     OUTPUT ${HDF5_BINARY_DIR}/H5lib_settings.c
     COMMAND ${CMD}
-    ARGS > ${HDF5_BINARY_DIR}/H5lib_settings.c
+    ARGS ${HDF5_BINARY_DIR}/H5lib_settings.c
     DEPENDS H5make_libsettings
     WORKING_DIRECTORY ${HDF5_BINARY_DIR}
 )

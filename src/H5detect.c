@@ -148,6 +148,7 @@ static int verify_signal_handlers(int signum, void (*handler)(int));
 #ifdef H5JMP_BUF
 static H5JMP_BUF jbuf_g;
 #endif
+static FILE* output = stdout;
 
 
 /*-------------------------------------------------------------------------
@@ -600,7 +601,7 @@ print_results(int nd, detected_t *d, int na, malign_t *misc_align)
     int		i, j;
 
     /* Include files */
-    printf("\
+    fprintf(output, "\
 /****************/\n\
 /* Module Setup */\n\
 /****************/\n\
@@ -653,7 +654,7 @@ print_results(int nd, detected_t *d, int na, malign_t *misc_align)
 /*********************/\n\
 \n\
 \n");
-    printf("\n\
+    fprintf(output, "\n\
 /*******************/\n\
 /* Local Variables */\n\
 /*******************/\n\
@@ -661,7 +662,7 @@ print_results(int nd, detected_t *d, int na, malign_t *misc_align)
 
 
     /* The interface initialization function */
-    printf("\n\
+    fprintf(output, "\n\
 \n\
 /*-------------------------------------------------------------------------\n\
  * Function:	H5TN_init_interface\n\
@@ -704,12 +705,12 @@ H5TN_init_interface(void)\n\
         }
 
 	/* Print a comment to describe this section of definitions. */
-	printf("\n   /*\n");
+	fprintf(output, "\n   /*\n");
 	iprint(d+i);
-	printf("    */\n");
+	fprintf(output, "    */\n");
 
 	/* The part common to fixed and floating types */
-	printf("\
+	fprintf(output, "\
     if(NULL == (dt = H5T__alloc()))\n\
         HGOTO_ERROR(H5E_DATATYPE, H5E_NOSPACE, FAIL, \"datatype allocation failed\")\n\
     dt->shared->state = H5T_STATE_IMMUTABLE;\n\
@@ -719,16 +720,16 @@ H5TN_init_interface(void)\n\
 	       d[i].size);			/*size			*/
 
         if(byte_order==-1)
-            printf("\
+            fprintf(output, "\
     dt->shared->u.atomic.order = H5T_ORDER_VAX;\n");
         else if(byte_order==0)
-            printf("\
+            fprintf(output, "\
     dt->shared->u.atomic.order = H5T_ORDER_LE;\n");
         else
-            printf("\
+            fprintf(output, "\
     dt->shared->u.atomic.order = H5T_ORDER_BE;\n");
 
-        printf("\
+        fprintf(output, "\
     dt->shared->u.atomic.offset = %d;\n\
     dt->shared->u.atomic.prec = %d;\n\
     dt->shared->u.atomic.lsb_pad = H5T_PAD_ZERO;\n\
@@ -739,12 +740,12 @@ H5TN_init_interface(void)\n\
 
 	if (0 == d[i].msize) {
 	    /* The part unique to fixed point types */
-	    printf("\
+	    fprintf(output, "\
     dt->shared->u.atomic.u.i.sign = H5T_SGN_%s;\n",
 		   d[i].sign ? "2" : "NONE");
 	} else {
 	    /* The part unique to floating point types */
-	    printf("\
+	    fprintf(output, "\
     dt->shared->u.atomic.u.f.sign = %d;\n\
     dt->shared->u.atomic.u.f.epos = %d;\n\
     dt->shared->u.atomic.u.f.esize = %d;\n\
@@ -763,11 +764,11 @@ H5TN_init_interface(void)\n\
 	}
 
 	/* Atomize the type */
-	printf("\
+	fprintf(output, "\
     if((H5T_NATIVE_%s_g = H5I_register(H5I_DATATYPE, dt, FALSE)) < 0)\n\
         HGOTO_ERROR(H5E_DATATYPE, H5E_CANTINIT, FAIL, \"can't register ID for built-in datatype\")\n",
 	       d[i].varname);
-	printf("    H5T_NATIVE_%s_ALIGN_g = %lu;\n",
+	fprintf(output, "    H5T_NATIVE_%s_ALIGN_g = %lu;\n",
 	       d[i].varname, (unsigned long)(d[i].align));
 
         /* Variables for alignment of compound datatype */
@@ -775,28 +776,28 @@ H5TN_init_interface(void)\n\
             !HDstrcmp(d[i].varname, "INT")   || !HDstrcmp(d[i].varname, "LONG")  ||
             !HDstrcmp(d[i].varname, "LLONG") || !HDstrcmp(d[i].varname, "FLOAT") ||
             !HDstrcmp(d[i].varname, "DOUBLE") || !HDstrcmp(d[i].varname, "LDOUBLE")) {
-            printf("    H5T_NATIVE_%s_COMP_ALIGN_g = %lu;\n",
+            fprintf(output, "    H5T_NATIVE_%s_COMP_ALIGN_g = %lu;\n",
                     d[i].varname, (unsigned long)(d[i].comp_align));
         }
     }
 
     /* Consider VAX a little-endian machine */
     if(byte_order==0 || byte_order==-1) {
-        printf("\n\
+        fprintf(output, "\n\
     /* Set the native order for this machine */\n\
     H5T_native_order_g = H5T_ORDER_%s;\n", "LE");
     } else {
-        printf("\n\
+        fprintf(output, "\n\
     /* Set the native order for this machine */\n\
     H5T_native_order_g = H5T_ORDER_%s;\n", "BE");
     }
 
     /* Structure alignment for pointers, hvl_t, hobj_ref_t, hdset_reg_ref_t */
-    printf("\n    /* Structure alignment for pointers, hvl_t, hobj_ref_t, hdset_reg_ref_t */\n");
+    fprintf(output, "\n    /* Structure alignment for pointers, hvl_t, hobj_ref_t, hdset_reg_ref_t */\n");
     for(j=0; j<na; j++)
-        printf("    H5T_%s_COMP_ALIGN_g = %lu;\n", misc_align[j].name, (unsigned long)(misc_align[j].comp_align));
+        fprintf(output, "    H5T_%s_COMP_ALIGN_g = %lu;\n", misc_align[j].name, (unsigned long)(misc_align[j].comp_align));
 
-    printf("\
+    fprintf(output, "\
 \n\
 done:\n\
     if(ret_value < 0) {\n\
@@ -809,55 +810,55 @@ done:\n\
     FUNC_LEAVE_NOAPI(ret_value);\n} /* end H5TN_init_interface() */\n");
 
     /* Print the ALIGNMENT and signal-handling status as comments */
-    printf("\n"
+    fprintf(output, "\n"
 	"/****************************************/\n"
 	"/* ALIGNMENT and signal-handling status */\n"
 	"/****************************************/\n");
     if (align_status_g & STA_NoALIGNMENT)
-	printf("/* ALIGNAMENT test is not available */\n");
+	fprintf(output, "/* ALIGNAMENT test is not available */\n");
     if (align_status_g & STA_NoHandlerVerify)
-	printf("/* Signal handlers verify test is not available */\n");
+	fprintf(output, "/* Signal handlers verify test is not available */\n");
     /* The following is available in H5pubconf.h. Printing them here for */
     /* convenience. */
 #ifdef H5_HAVE_SIGNAL
-	printf("/* Signal() support: yes */\n");
+	fprintf(output, "/* Signal() support: yes */\n");
 #else
-	printf("/* Signal() support: no */\n");
+	fprintf(output, "/* Signal() support: no */\n");
 #endif
 #ifdef H5_HAVE_SETJMP
-	printf("/* setjmp() support: yes */\n");
+	fprintf(output, "/* setjmp() support: yes */\n");
 #else
-	printf("/* setjmp() support: no */\n");
+	fprintf(output, "/* setjmp() support: no */\n");
 #endif
 #ifdef H5_HAVE_LONGJMP
-	printf("/* longjmp() support: yes */\n");
+	fprintf(output, "/* longjmp() support: yes */\n");
 #else
-	printf("/* longjmp() support: no */\n");
+	fprintf(output, "/* longjmp() support: no */\n");
 #endif
 #ifdef H5_HAVE_SIGSETJMP
-	printf("/* sigsetjmp() support: yes */\n");
+	fprintf(output, "/* sigsetjmp() support: yes */\n");
 #else
-	printf("/* sigsetjmp() support: no */\n");
+	fprintf(output, "/* sigsetjmp() support: no */\n");
 #endif
 #ifdef H5_HAVE_SIGLONGJMP
-	printf("/* siglongjmp() support: yes */\n");
+	fprintf(output, "/* siglongjmp() support: yes */\n");
 #else
-	printf("/* siglongjmp() support: no */\n");
+	fprintf(output, "/* siglongjmp() support: no */\n");
 #endif
 #ifdef H5_HAVE_SIGPROCMASK
-	printf("/* sigprocmask() support: yes */\n");
+	fprintf(output, "/* sigprocmask() support: yes */\n");
 #else
-	printf("/* sigprocmask() support: no */\n");
+	fprintf(output, "/* sigprocmask() support: no */\n");
 #endif
 
     /* Print the statics of signal handlers called for debugging */
-    printf("\n"
+    fprintf(output, "\n"
 	"/******************************/\n"
 	"/* signal handlers statistics */\n"
 	"/******************************/\n");
-    printf("/* signal_handlers tested: %d times */\n", signal_handler_tested_g);
-    printf("/* sigbus_handler called: %d times */\n", sigbus_handler_called_g);
-    printf("/* sigsegv_handler called: %d times */\n", sigsegv_handler_called_g);
+    fprintf(output, "/* signal_handlers tested: %d times */\n", signal_handler_tested_g);
+    fprintf(output, "/* sigbus_handler called: %d times */\n", sigbus_handler_called_g);
+    fprintf(output, "/* sigsegv_handler called: %d times */\n", sigsegv_handler_called_g);
 } /* end print_results() */
 
 
@@ -886,16 +887,16 @@ iprint(detected_t *d)
 	/*
 	 * Print the byte ordering above the bit fields.
 	 */
-	printf("    * ");
+	fprintf(output, "    * ");
 	for (i=MIN(pass*4+3,d->size-1); i>=pass*4; --i) {
-	    printf ("%4d", d->perm[i]);
-	    if (i>pass*4) HDfputs ("     ", stdout);
+	    fprintf ("%4d", d->perm[i]);
+	    if (i>pass*4) HDfputs ("     ", output);
 	}
 
 	/*
 	 * Print the bit fields
 	 */
-	printf("\n    * ");
+	fprintf(output, "\n    * ");
 	for (i=MIN(pass*4+3,d->size-1),
 	     k=MIN(pass*32+31,8*d->size-1);
 	     i>=pass*4; --i) {
@@ -924,18 +925,18 @@ iprint(detected_t *d)
      * Is there an implicit bit in the mantissa.
      */
     if (d->msize) {
-	printf("    * Implicit bit? %s\n", d->imp ? "yes" : "no");
+	fprintf(output, "    * Implicit bit? %s\n", d->imp ? "yes" : "no");
     }
 
     /*
      * Alignment
      */
     if (0==d->align) {
-	printf("    * Alignment: NOT CALCULATED\n");
+	fprintf(output, "    * Alignment: NOT CALCULATED\n");
     } else if (1==d->align) {
-	printf("    * Alignment: none\n");
+	fprintf(output, "    * Alignment: none\n");
     } else {
-	printf("    * Alignment: %lu\n", (unsigned long)(d->align));
+	fprintf(output, "    * Alignment: %lu\n", (unsigned long)(d->align));
     }
 }
 
@@ -1304,34 +1305,34 @@ bit.\n";
     /*
      * The file header: warning, copyright notice, build information.
      */
-    printf("/* Generated automatically by H5detect -- do not edit */\n\n\n");
+    fprintf(output, "/* Generated automatically by H5detect -- do not edit */\n\n\n");
     HDputs(FileHeader);		/*the copyright notice--see top of this file */
 
-    printf(" *\n * Created:\t\t%s %2d, %4d\n",
+    fprintf(output, " *\n * Created:\t\t%s %2d, %4d\n",
 	   month_name[tm->tm_mon], tm->tm_mday, 1900 + tm->tm_year);
     if (pwd || real_name[0] || host_name[0]) {
-	printf(" *\t\t\t");
-	if (real_name[0]) printf("%s <", real_name);
+	fprintf(output, " *\t\t\t");
+	if (real_name[0]) fprintf(output, "%s <", real_name);
 #ifdef H5_HAVE_GETPWUID
-	if (pwd) HDfputs(pwd->pw_name, stdout);
+	if (pwd) HDfputs(pwd->pw_name, output);
 #endif
-	if (host_name[0]) printf("@%s", host_name);
-	if (real_name[0]) printf(">");
+	if (host_name[0]) fprintf(output, "@%s", host_name);
+	if (real_name[0]) fprintf(output, ">");
 	HDputchar('\n');
     }
-    printf(" *\n * Purpose:\t\t");
+    fprintf(output, " *\n * Purpose:\t\t");
     for (s = purpose; *s; s++) {
 	HDputchar(*s);
-	if ('\n' == *s && s[1]) printf(" *\t\t\t");
+	if ('\n' == *s && s[1]) fprintf(output, " *\t\t\t");
     }
 
-    printf(" *\n * Modifications:\n *\n");
-    printf(" *\tDO NOT MAKE MODIFICATIONS TO THIS FILE!\n");
-    printf(" *\tIt was generated by code in `H5detect.c'.\n");
+    fprintf(output, " *\n * Modifications:\n *\n");
+    fprintf(output, " *\tDO NOT MAKE MODIFICATIONS TO THIS FILE!\n");
+    fprintf(output, " *\tIt was generated by code in `H5detect.c'.\n");
 
-    printf(" *\n *");
+    fprintf(output, " *\n *");
     for (i = 0; i < 73; i++) HDputchar('-');
-    printf("\n */\n\n");
+    fprintf(output, "\n */\n\n");
 
 }
 
@@ -1729,8 +1730,19 @@ static int verify_signal_handlers(int signum, void (*handler)(int))
  *-------------------------------------------------------------------------
  */
 int
-main(void)
+main(int argc, char *argv[])
 {
+
+    int close_output = 0;
+    if (argc > 1) {
+	output = fopen(argv[1], "w+");
+	if (!output) {
+	    fprintf(stderr, "H5detect: unable to open output file: %s\n",
+		    argv[1]);
+	    return 1;
+	}
+	close_output = 1;
+    }
 
 #if defined(H5_HAVE_SETSYSINFO) && defined(SSI_NVPAIRS)
 #if defined(UAC_NOPRINT) && defined(UAC_SIGBUS)
@@ -1780,6 +1792,10 @@ main(void)
     detect_alignments();
 
     print_results (nd_g, d_g, na_g, m_g);
+
+    if (close_output) {
+	fclose(output);
+    }
 
     return 0;
 }
